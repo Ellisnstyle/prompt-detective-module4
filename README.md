@@ -4,8 +4,10 @@ Static GitHub Pages version of the Module 4 Prompt Detective game.
 
 ## Update Workflow
 
-1. Replace or add image files in `images/`.
-2. Update `game-data.js` with the image path, visible brief, aspect ratio, and answer data.
-3. Commit and push to GitHub.
+This GitHub Pages folder is rebuilt from the local teacher copy:
+
+`outputs/module4-prompt-game`
+
+Use the local `prompt-info-sheet.csv` and rebuild script there. Do not hand-edit `game-data.js` here unless you are doing an emergency one-off fix.
 
 The game is fully static and can be embedded in Canvas or Google Sites with an iframe once GitHub Pages is enabled.
