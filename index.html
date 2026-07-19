@@ -477,7 +477,7 @@
       line-height: 1;
     }
 
-    .clout {
+    .badge-showcase {
       border: 1px solid rgba(140, 29, 64, 0.28);
       border-radius: 8px;
       background:
@@ -487,7 +487,7 @@
       box-shadow: 0 12px 30px rgba(140, 29, 64, 0.12);
     }
 
-    .clout span {
+    .badge-showcase span {
       display: block;
       color: var(--muted);
       font-size: 13px;
@@ -496,7 +496,7 @@
       letter-spacing: 0.04em;
     }
 
-    .clout strong {
+    .badge-showcase strong {
       display: block;
       margin-top: 7px;
       color: var(--maroon);
@@ -504,7 +504,7 @@
       line-height: 1.05;
     }
 
-    .clout small {
+    .badge-showcase small {
       display: block;
       margin-top: 9px;
       color: var(--muted);
@@ -947,7 +947,7 @@
         <header class="mast">
           <div>
             <h1>Prompt Detective</h1>
-            <p>Beat Level 1, unlock Level 2, screenshot the clout.</p>
+            <p>Beat Level 1, unlock Level 2, screenshot your score.</p>
           </div>
           <span class="round-pill">${escapeHtml(label)}</span>
         </header>
@@ -1074,7 +1074,7 @@
         ${renderMast()}
         <section class="result">
           <div class="result-copy">
-            <h2>Clout Unlocked</h2>
+            <h2>Badge Earned</h2>
             <p>Your badge, score, and round code are ready for the screenshot.</p>
             <div class="actions">
               <button type="button" class="gold-button" data-action="restart">Play Again</button>
@@ -1085,10 +1085,10 @@
           </div>
           <div class="score-card">
             <h3>${escapeHtml(state.roundCode)}</h3>
-            <div class="clout">
+            <div class="badge-showcase">
               <span>Badge</span>
               <strong>${escapeHtml(badge)}</strong>
-              <small>${total}/${totalMax} clout points</small>
+              <small>${total}/${totalMax} points</small>
             </div>
             <div class="score-meter" aria-label="Score progress">
               <div class="meter-row">
