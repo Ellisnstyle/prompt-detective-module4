@@ -1,0 +1,1190 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Prompt Detective</title>
+  <style>
+    :root {
+      --ink: #191919;
+      --muted: #5f6368;
+      --line: #d8dde6;
+      --paper: #f7f8fb;
+      --panel: #ffffff;
+      --gold: #ffc627;
+      --maroon: #8c1d40;
+      --blue: #1d4ed8;
+      --green: #166534;
+      --red: #b91c1c;
+      --soft-gold: #fff8df;
+      --soft-maroon: #fff2f6;
+      --soft-blue: #eff6ff;
+      --shadow: 0 18px 46px rgba(15, 23, 42, 0.13);
+      font-family: Arial, Helvetica, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 8% 2%, rgba(255, 198, 39, 0.26), transparent 28%),
+        radial-gradient(circle at 92% 4%, rgba(140, 29, 64, 0.14), transparent 24%),
+        linear-gradient(180deg, #ffffff, var(--paper));
+    }
+
+    button {
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      padding: 9px 13px;
+      background: var(--panel);
+      color: var(--ink);
+      cursor: pointer;
+      font: inherit;
+      font-weight: 700;
+    }
+
+    button:hover {
+      background: #f1f4f9;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.5;
+    }
+
+    button:focus {
+      outline: 3px solid rgba(29, 78, 216, 0.25);
+      outline-offset: 2px;
+    }
+
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .shell {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+    }
+
+    .mast {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+      padding: 18px 20px;
+      background: #191919;
+      border-left: 8px solid var(--gold);
+    }
+
+    .mast h1 {
+      margin: 0;
+      color: #ffffff;
+      font-size: clamp(25px, 4vw, 42px);
+      line-height: 1.05;
+      letter-spacing: 0;
+    }
+
+    .mast p {
+      margin: 7px 0 0;
+      color: #ffeaa3;
+      line-height: 1.4;
+    }
+
+    .round-pill {
+      display: inline-flex;
+      align-items: center;
+      max-width: 100%;
+      min-height: 34px;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: 999px;
+      padding: 7px 11px;
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .start {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(260px, 0.55fr);
+      gap: 20px;
+      align-items: center;
+      padding: 22px;
+    }
+
+    .start-copy h2,
+    .result-copy h2 {
+      margin: 0;
+      font-size: clamp(23px, 3vw, 34px);
+      line-height: 1.1;
+      letter-spacing: 0;
+    }
+
+    .start-copy p,
+    .result-copy p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      line-height: 1.48;
+    }
+
+    .start-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--soft-gold);
+      padding: 16px;
+    }
+
+    .start-card strong {
+      display: block;
+      font-size: 18px;
+      line-height: 1.25;
+    }
+
+    .start-card span {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .play {
+      display: grid;
+      grid-template-columns: minmax(260px, 0.72fr) minmax(360px, 1.28fr);
+      gap: 18px;
+      padding: 18px;
+      align-items: start;
+    }
+
+    .image-panel,
+    .chip-panel,
+    .score-card,
+    .answers-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+    }
+
+    .image-panel {
+      overflow: hidden;
+      width: 100%;
+      max-width: 460px;
+      justify-self: center;
+    }
+
+    .image-frame {
+      position: relative;
+      background: #e5e7eb;
+    }
+
+    .image-panel img {
+      display: block;
+      width: 100%;
+      max-height: 430px;
+      height: auto;
+      object-fit: contain;
+      background: #e5e7eb;
+    }
+
+    .image-ref-label {
+      position: absolute;
+      right: 10px;
+      bottom: 10px;
+      max-width: min(78%, 380px);
+      border-radius: 999px;
+      padding: 5px 8px;
+      background: rgba(25, 25, 25, 0.68);
+      color: #ffffff;
+      font-size: 12px;
+      line-height: 1.2;
+      text-align: right;
+    }
+
+    .image-meta {
+      padding: 12px 14px 14px;
+    }
+
+    .image-meta h2 {
+      margin: 0;
+      font-size: 22px;
+      line-height: 1.18;
+      letter-spacing: 0;
+    }
+
+    .brief {
+      margin: 8px 0 0;
+      color: var(--muted);
+      line-height: 1.42;
+    }
+
+    .badge-row,
+    .progress-row,
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .progress-row {
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 10px;
+      background: #ffffff;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .badge.gold {
+      border-color: rgba(140, 29, 64, 0.24);
+      background: var(--soft-gold);
+      color: #3b2a00;
+    }
+
+    .badge.maroon {
+      border-color: rgba(140, 29, 64, 0.3);
+      background: var(--soft-maroon);
+      color: var(--maroon);
+    }
+
+    .chip-panel {
+      padding: 14px;
+    }
+
+    .chip-header {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+
+    .chip-header h2 {
+      margin: 0;
+      font-size: 20px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .chip-header p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    .chip-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 9px;
+    }
+
+    .chip {
+      display: block;
+      width: 100%;
+      min-height: 46px;
+      padding: 9px 10px;
+      text-align: left;
+      border-color: var(--line);
+      background: #ffffff;
+      font-weight: 400;
+      line-height: 1.26;
+    }
+
+    .chip[aria-pressed="true"] {
+      border-color: var(--maroon);
+      background: var(--soft-maroon);
+      box-shadow: inset 0 0 0 2px rgba(140, 29, 64, 0.15);
+    }
+
+    .chip strong {
+      display: block;
+      font-weight: 700;
+    }
+
+    .chip span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 400;
+    }
+
+    .term-picks {
+      display: grid;
+      gap: 9px;
+      margin-top: 14px;
+      border-top: 1px solid var(--line);
+      padding-top: 12px;
+    }
+
+    .term-title {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .term-row {
+      display: grid;
+      grid-template-columns: minmax(150px, 0.42fr) minmax(0, 0.58fr);
+      gap: 9px;
+      align-items: center;
+    }
+
+    .term-row label {
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 700;
+      line-height: 1.25;
+    }
+
+    .term-row select {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #ffffff;
+      color: var(--ink);
+      font: inherit;
+      padding: 8px 10px;
+    }
+
+    .term-row select:focus {
+      outline: 3px solid rgba(29, 78, 216, 0.25);
+      outline-offset: 1px;
+    }
+
+    .term-placeholder {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    .message {
+      min-height: 20px;
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .actions {
+      justify-content: space-between;
+      margin-top: 14px;
+    }
+
+    .action-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .primary {
+      border-color: var(--maroon);
+      background: var(--maroon);
+      color: #ffffff;
+    }
+
+    .primary:hover {
+      background: #741633;
+    }
+
+    .gold-button {
+      border-color: #d4a000;
+      background: var(--gold);
+      color: #191919;
+    }
+
+    .gold-button:hover {
+      background: #f0b600;
+    }
+
+    .result {
+      display: grid;
+      grid-template-columns: minmax(0, 0.7fr) minmax(320px, 0.9fr);
+      gap: 18px;
+      padding: 22px;
+      align-items: start;
+    }
+
+    .score-card {
+      position: relative;
+      overflow: hidden;
+      padding: 18px;
+      background:
+        linear-gradient(135deg, rgba(255, 198, 39, 0.32), transparent 38%),
+        linear-gradient(315deg, rgba(140, 29, 64, 0.12), transparent 42%),
+        var(--soft-gold);
+    }
+
+    .score-card h3,
+    .answers-card h3 {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .score-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 13px;
+    }
+
+    .score-tile {
+      border: 1px solid rgba(140, 29, 64, 0.18);
+      border-radius: 8px;
+      background: #ffffff;
+      padding: 11px;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+    }
+
+    .score-tile span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .score-tile strong {
+      display: block;
+      margin-top: 5px;
+      font-size: 25px;
+      line-height: 1;
+    }
+
+    .clout {
+      border: 1px solid rgba(140, 29, 64, 0.28);
+      border-radius: 8px;
+      background:
+        linear-gradient(135deg, #ffffff, #fff8df);
+      padding: 18px;
+      text-align: center;
+      box-shadow: 0 12px 30px rgba(140, 29, 64, 0.12);
+    }
+
+    .clout span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .clout strong {
+      display: block;
+      margin-top: 7px;
+      color: var(--maroon);
+      font-size: clamp(34px, 5vw, 58px);
+      line-height: 1.05;
+    }
+
+    .clout small {
+      display: block;
+      margin-top: 9px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .score-meter {
+      margin-top: 13px;
+      border: 1px solid rgba(140, 29, 64, 0.18);
+      border-radius: 8px;
+      background: #ffffff;
+      padding: 12px;
+    }
+
+    .meter-row {
+      display: grid;
+      grid-template-columns: 84px minmax(0, 1fr) 54px;
+      gap: 10px;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    .meter-row:first-child {
+      margin-top: 0;
+    }
+
+    .meter-row span,
+    .meter-row strong {
+      font-size: 13px;
+      line-height: 1.2;
+    }
+
+    .meter-row span {
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .meter-track {
+      overflow: hidden;
+      height: 12px;
+      border-radius: 999px;
+      background: #ebeef5;
+    }
+
+    .meter-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--maroon), var(--gold));
+    }
+
+    .screenshot-note {
+      margin: 13px 0 0;
+      border: 1px dashed rgba(140, 29, 64, 0.32);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.72);
+      padding: 10px 12px;
+      color: var(--maroon);
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .answers {
+      display: grid;
+      gap: 12px;
+      padding: 0 22px 22px;
+    }
+
+    .answers-card {
+      overflow: hidden;
+    }
+
+    .answer-head {
+      display: grid;
+      grid-template-columns: 138px minmax(0, 1fr);
+      gap: 12px;
+      padding: 12px;
+      border-bottom: 1px solid var(--line);
+      align-items: center;
+      background: var(--soft-blue);
+    }
+
+    .answer-head img {
+      width: 138px;
+      aspect-ratio: 4 / 3;
+      object-fit: cover;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #e5e7eb;
+    }
+
+    .answer-head h3 {
+      margin: 0;
+    }
+
+    .answer-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      padding: 12px;
+    }
+
+    .answer-chip {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 10px;
+      background: #ffffff;
+      line-height: 1.3;
+    }
+
+    .answer-chip strong {
+      display: block;
+      font-size: 13px;
+    }
+
+    .answer-chip span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    @media (max-width: 900px) {
+      .mast,
+      .start,
+      .play,
+      .result {
+        grid-template-columns: 1fr;
+      }
+
+      .round-pill {
+        width: fit-content;
+      }
+    }
+
+    @media (max-width: 620px) {
+      .page {
+        padding: 12px;
+      }
+
+      .mast,
+      .start,
+      .play,
+      .result {
+        padding: 14px;
+      }
+
+      .chip-grid,
+      .score-grid,
+      .answer-list,
+      .answer-head {
+        grid-template-columns: 1fr;
+      }
+
+      .answer-head img {
+        width: 100%;
+      }
+
+      .actions {
+        display: block;
+      }
+
+      .action-group {
+        margin-top: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="shell" id="app" aria-live="polite"></section>
+  </main>
+
+  <script src="game-data.js"></script>
+  <script>
+    const data = window.PROMPT_DETECTIVE_DATA;
+    const state = {
+      screen: "start",
+      roundCode: "",
+      roundItems: [],
+      currentIndex: 0,
+      selected: {},
+      optionKeys: {},
+      termOptions: {},
+      level2Categories: {},
+      stage: "level1",
+      answersVisible: false,
+      message: ""
+    };
+
+    const app = document.getElementById("app");
+
+    function randomInt(max) {
+      if (max <= 0) return 0;
+      if (window.crypto && window.crypto.getRandomValues) {
+        const range = 4294967296;
+        const limit = Math.floor(range / max) * max;
+        const value = new Uint32Array(1);
+        do {
+          window.crypto.getRandomValues(value);
+        } while (value[0] >= limit);
+        return value[0] % max;
+      }
+      return Math.floor(Math.random() * max);
+    }
+
+    function shuffle(items) {
+      const copy = items.slice();
+      for (let i = copy.length - 1; i > 0; i -= 1) {
+        const j = randomInt(i + 1);
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function makeRoundCode() {
+      if (window.crypto && window.crypto.getRandomValues) {
+        const bytes = new Uint8Array(3);
+        window.crypto.getRandomValues(bytes);
+        return `M4G-${Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("").toUpperCase()}`;
+      }
+      return `M4G-${Math.random().toString(36).slice(2, 8).toUpperCase()}`;
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    function buildOptions(item) {
+      const categories = new Set(item.answers.map(answer => answer.category));
+      const pool = shuffle(Object.keys(data.categories).filter(category => !categories.has(category)));
+      for (const category of pool) {
+        if (categories.size >= data.chipOptionsPerImage) break;
+        categories.add(category);
+      }
+
+      return shuffle(Array.from(categories));
+    }
+
+    function buildTermOptions() {
+      return Object.fromEntries(Object.entries(data.categories).map(([category, terms]) => {
+        return [category, shuffle(terms)];
+      }));
+    }
+
+    function startRound() {
+      const ready = data.items.filter(item => item.status === "ready");
+      const roundSize = Math.min(data.roundSize, ready.length);
+      state.screen = "play";
+      state.roundCode = makeRoundCode();
+      state.roundItems = shuffle(ready).slice(0, roundSize);
+      state.currentIndex = 0;
+      state.selected = {};
+      state.optionKeys = {};
+      state.termOptions = {};
+      state.level2Categories = {};
+      state.stage = "level1";
+      state.answersVisible = false;
+      state.message = "";
+      state.roundItems.forEach(item => {
+        state.selected[item.id] = { categories: [], terms: {} };
+        state.optionKeys[item.id] = buildOptions(item);
+        state.termOptions[item.id] = buildTermOptions();
+        state.level2Categories[item.id] = [];
+      });
+      render();
+    }
+
+    function selectedRecord(item) {
+      return state.selected[item.id] || { categories: [], terms: {} };
+    }
+
+    function selectedCategories(item) {
+      return selectedRecord(item).categories || [];
+    }
+
+    function toggleCategory(item, category) {
+      if (state.stage !== "level1") return;
+      const record = selectedRecord(item);
+      const categories = record.categories.slice();
+      const terms = { ...record.terms };
+      const existingIndex = categories.indexOf(category);
+      if (existingIndex >= 0) {
+        categories.splice(existingIndex, 1);
+        delete terms[category];
+      } else if (categories.length < 5) {
+        categories.push(category);
+        terms[category] = "";
+      } else {
+        state.message = "Five categories max.";
+      }
+      state.selected[item.id] = { categories, terms };
+      render();
+    }
+
+    function setTerm(item, category, term) {
+      if (state.stage !== "level2") return;
+      const record = selectedRecord(item);
+      if (!(state.level2Categories[item.id] || []).includes(category)) return;
+      state.selected[item.id] = {
+        categories: record.categories.slice(),
+        terms: { ...record.terms, [category]: term }
+      };
+      state.message = "";
+      render();
+    }
+
+    function answerMap(item) {
+      return new Map(item.answers.map(answer => [answer.category, answer.term]));
+    }
+
+    function scoreItem(item) {
+      const answers = answerMap(item);
+      const record = selectedRecord(item);
+      let levelTwo = 0;
+      let levelOne = 0;
+
+      record.categories.forEach(category => {
+        if (answers.has(category)) {
+          levelOne += 1;
+          if ((state.level2Categories[item.id] || []).includes(category) && answers.get(category) === record.terms[category]) {
+            levelTwo += 1;
+          }
+        }
+      });
+
+      return {
+        levelOne,
+        levelTwo
+      };
+    }
+
+    function scoreRound() {
+      return state.roundItems.reduce((total, item) => {
+        const itemScore = scoreItem(item);
+        total.levelOne += itemScore.levelOne;
+        total.levelTwo += itemScore.levelTwo;
+        return total;
+      }, { levelOne: 0, levelTwo: 0 });
+    }
+
+    function getBadge(levelOne, levelTwo, levelTwoMax = 5) {
+      const termRate = levelTwoMax ? levelTwo / levelTwoMax : 0;
+      if (levelOne === 5 && levelTwoMax === 5 && levelTwo === 5) return "Perfect Reconstruction";
+      if (levelOne >= 5 && termRate >= 0.8) return "Prompt Architect";
+      if (levelOne >= 4 && termRate >= 0.67) return "Prompt Detective";
+      if (levelOne >= 4 && levelTwo < 2) return "Level 1 Pro";
+      if (levelOne >= 3 && termRate >= 0.5) return "Prompt Tracker";
+      if (levelOne >= 3) return "Category Scout";
+      return "Prompt Explorer";
+    }
+
+    function canSubmitLevel1() {
+      const record = selectedRecord(state.roundItems[state.currentIndex]);
+      return record.categories.length === 5;
+    }
+
+    function canSubmitLevel2() {
+      const record = selectedRecord(state.roundItems[state.currentIndex]);
+      const level2Categories = state.level2Categories[state.roundItems[state.currentIndex].id] || [];
+      return level2Categories.length > 0 && level2Categories.every(category => record.terms[category]);
+    }
+
+    function submitLevel1() {
+      if (!canSubmitLevel1()) {
+        state.message = "Pick exactly five categories.";
+        render();
+        return;
+      }
+      const item = state.roundItems[state.currentIndex];
+      const answers = answerMap(item);
+      const correctCategories = selectedRecord(item).categories.filter(category => answers.has(category));
+      state.level2Categories[item.id] = correctCategories;
+      const score = correctCategories.length;
+      if (score >= 3) {
+        state.stage = "level2";
+        state.message = `Level 1 unlocked: ${score}/5 categories. Choose terms for the ${score} correct categories.`;
+        render();
+      } else {
+        state.screen = "result";
+        state.message = `Level 2 locked: ${score}/5 categories.`;
+        render();
+      }
+    }
+
+    function submitLevel2() {
+      if (!canSubmitLevel2()) {
+        state.message = "Choose one term for each selected category.";
+        render();
+        return;
+      }
+      state.screen = "result";
+      state.message = "";
+      render();
+    }
+
+    function copyScore() {
+      const score = scoreRound();
+      const levelTwoMax = Math.max(0, ...state.roundItems.map(item => (state.level2Categories[item.id] || []).length));
+      const badge = getBadge(score.levelOne, score.levelTwo, levelTwoMax);
+      const levelTwoLabel = levelTwoMax ? `${score.levelTwo} / ${levelTwoMax}` : "Locked";
+      const totalMax = 5 + levelTwoMax;
+      const text = [
+        "Prompt Detective",
+        `Dataset: ${data.dataset}`,
+        `Round code: ${state.roundCode}`,
+        `Badge: ${badge}`,
+        `Level 1: ${score.levelOne} / 5`,
+        `Level 2: ${levelTwoLabel}`,
+        `Total: ${score.levelOne + score.levelTwo} / ${totalMax}`
+      ].join("\n");
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          state.message = "Score copied.";
+          render();
+        }).catch(() => {
+          state.message = "Copy was blocked. Screenshot the scorecard.";
+          render();
+        });
+      } else {
+        state.message = "Screenshot the scorecard.";
+        render();
+      }
+    }
+
+    function renderMast() {
+      const label = state.roundCode || data.dataset;
+      return `
+        <header class="mast">
+          <div>
+            <h1>Prompt Detective</h1>
+            <p>Beat Level 1, unlock Level 2, screenshot the clout.</p>
+          </div>
+          <span class="round-pill">${escapeHtml(label)}</span>
+        </header>
+      `;
+    }
+
+    function renderStart() {
+      return `
+        ${renderMast()}
+        <section class="start">
+          <div class="start-copy">
+            <h2>Can you reverse-engineer the prompt?</h2>
+            <p>Each round is one image. Get at least 3 of 5 categories right to unlock the term challenge.</p>
+            <div class="actions">
+              <button type="button" class="gold-button" data-action="start">Start Round</button>
+            </div>
+          </div>
+          <div class="start-card">
+            <strong>10 points max</strong>
+            <span>Level 1 is worth 5 category points. Level 2 unlocks for the categories you found correctly.</span>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderPlay() {
+      const item = state.roundItems[state.currentIndex];
+      const record = selectedRecord(item);
+      const selected = new Set(record.categories);
+      const progress = state.stage === "level1" ? "Level 1" : "Level 2";
+      const chips = state.optionKeys[item.id].map(category => {
+        const pressed = selected.has(category);
+        return `
+          <button type="button" class="chip" aria-pressed="${pressed}" data-action="category" data-category="${escapeHtml(category)}" ${state.stage === "level2" ? "disabled" : ""}>
+            <strong>${escapeHtml(category)}</strong>
+          </button>
+        `;
+      }).join("");
+      const levelOneScore = scoreItem(item).levelOne;
+      const level2Categories = state.level2Categories[item.id] || [];
+      const termRows = state.stage === "level2" && level2Categories.length
+        ? level2Categories.map(category => {
+            const selectedTerm = record.terms[category] || "";
+            const options = [
+              `<option value="">Choose term</option>`,
+              ...(state.termOptions[item.id][category] || []).map(term => {
+                const isSelected = term === selectedTerm ? " selected" : "";
+                return `<option value="${escapeHtml(term)}"${isSelected}>${escapeHtml(term)}</option>`;
+              })
+            ].join("");
+            return `
+              <div class="term-row">
+                <label for="${escapeHtml(item.id)}-${escapeHtml(category)}">${escapeHtml(category)}</label>
+                <select id="${escapeHtml(item.id)}-${escapeHtml(category)}" data-action="term" data-category="${escapeHtml(category)}">
+                  ${options}
+                </select>
+              </div>
+            `;
+          }).join("")
+        : "";
+      const stageHelp = state.stage === "level1"
+        ? "Choose 5 categories. Score at least 3 to unlock Level 2."
+        : `Level 1 score: ${levelOneScore}/5. Pick terms for the ${level2Categories.length} correct categories.`;
+      const actionLabel = state.stage === "level1" ? "Check Level 1" : "Score Round";
+      const actionName = state.stage === "level1" ? "level1" : "level2";
+      const actionReady = state.stage === "level1" ? canSubmitLevel1() : canSubmitLevel2();
+
+      return `
+        ${renderMast()}
+        <section class="play">
+          <div class="image-panel">
+            <div class="image-frame">
+              <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}">
+              <div class="image-ref-label">${escapeHtml(progress)} &middot; ${escapeHtml(item.aspectRatio)}</div>
+            </div>
+            <div class="image-meta">
+              <h2>${escapeHtml(item.title)}</h2>
+              <p class="brief">${escapeHtml(item.visibleBrief)}</p>
+            </div>
+          </div>
+
+          <div class="chip-panel">
+            <div class="progress-row">
+              <span class="badge">${escapeHtml(progress)}</span>
+              <span class="badge">Categories ${selected.size} / 5</span>
+              <span class="badge">${escapeHtml(data.dataset)}</span>
+            </div>
+            <div class="chip-header">
+              <div>
+                <h2>${state.stage === "level1" ? "Choose 5 categories" : "Choose the terms"}</h2>
+                <p>${escapeHtml(stageHelp)}</p>
+              </div>
+            </div>
+            <div class="chip-grid">${chips}</div>
+            <div class="term-picks ${state.stage === "level2" ? "" : "hidden"}">
+              <p class="term-title">Level 2 Term Picks</p>
+              ${termRows}
+            </div>
+            <div class="message">${escapeHtml(state.message)}</div>
+            <div class="actions">
+              <button type="button" data-action="restart">New Image</button>
+              <div class="action-group">
+                <button type="button" class="primary" data-action="${actionName}" ${actionReady ? "" : "disabled"}>${escapeHtml(actionLabel)}</button>
+              </div>
+            </div>
+          </div>
+        </section>
+      `;
+    }
+
+    function renderResult() {
+      const score = scoreRound();
+      const levelOneMax = state.roundItems.length * 5;
+      const levelTwoMax = Math.max(0, ...state.roundItems.map(item => (state.level2Categories[item.id] || []).length));
+      const total = score.levelOne + score.levelTwo;
+      const totalMax = levelOneMax + levelTwoMax;
+      const badge = getBadge(score.levelOne, score.levelTwo, levelTwoMax);
+      const levelOnePct = levelOneMax ? Math.round((score.levelOne / levelOneMax) * 100) : 0;
+      const levelTwoPct = levelTwoMax ? Math.round((score.levelTwo / levelTwoMax) * 100) : 0;
+      const totalPct = totalMax ? Math.round((total / totalMax) * 100) : 0;
+      const levelTwoLabel = levelTwoMax ? `${score.levelTwo}/${levelTwoMax}` : "Locked";
+
+      return `
+        ${renderMast()}
+        <section class="result">
+          <div class="result-copy">
+            <h2>Clout Unlocked</h2>
+            <p>Your badge, score, and round code are ready for the screenshot.</p>
+            <div class="actions">
+              <button type="button" class="gold-button" data-action="restart">Play Again</button>
+              <button type="button" data-action="copy">Copy Score</button>
+              <button type="button" data-action="answers">${state.answersVisible ? "Hide Answers" : "Show Answers"}</button>
+            </div>
+            <div class="message">${escapeHtml(state.message)}</div>
+          </div>
+          <div class="score-card">
+            <h3>${escapeHtml(state.roundCode)}</h3>
+            <div class="clout">
+              <span>Badge</span>
+              <strong>${escapeHtml(badge)}</strong>
+              <small>${total}/${totalMax} clout points</small>
+            </div>
+            <div class="score-meter" aria-label="Score progress">
+              <div class="meter-row">
+                <span>Level 1</span>
+                <div class="meter-track"><div class="meter-fill" style="width: ${levelOnePct}%"></div></div>
+                <strong>${score.levelOne}/${levelOneMax}</strong>
+              </div>
+              <div class="meter-row">
+                <span>Level 2</span>
+                <div class="meter-track"><div class="meter-fill" style="width: ${levelTwoPct}%"></div></div>
+                <strong>${escapeHtml(levelTwoLabel)}</strong>
+              </div>
+              <div class="meter-row">
+                <span>Total</span>
+                <div class="meter-track"><div class="meter-fill" style="width: ${totalPct}%"></div></div>
+                <strong>${total}/${totalMax}</strong>
+              </div>
+            </div>
+            <div class="score-grid">
+              <div class="score-tile">
+                <span>Level 1</span>
+                <strong>${score.levelOne}/${levelOneMax}</strong>
+              </div>
+              <div class="score-tile">
+                <span>Level 2</span>
+                <strong>${escapeHtml(levelTwoLabel)}</strong>
+              </div>
+              <div class="score-tile">
+                <span>Total</span>
+                <strong>${total}/${totalMax}</strong>
+              </div>
+            </div>
+            <p class="screenshot-note">Screenshot this scorecard for participation credit.</p>
+          </div>
+        </section>
+        <section class="answers ${state.answersVisible ? "" : "hidden"}">${renderAnswers()}</section>
+      `;
+    }
+
+    function renderAnswers() {
+      return state.roundItems.map(item => {
+        const answers = item.answers.map(answer => `
+          <div class="answer-chip">
+            <strong>${escapeHtml(answer.category)}</strong>
+            <span>${escapeHtml(answer.term)}</span>
+          </div>
+        `).join("");
+        return `
+          <article class="answers-card">
+            <div class="answer-head">
+              <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}">
+              <div>
+                <h3>${escapeHtml(item.title)}</h3>
+                <p class="brief">${escapeHtml(item.visibleBrief)}</p>
+              </div>
+            </div>
+            <div class="answer-list">${answers}</div>
+          </article>
+        `;
+      }).join("");
+    }
+
+    function render() {
+      if (state.screen === "start") {
+        app.innerHTML = renderStart();
+      } else if (state.screen === "play") {
+        app.innerHTML = renderPlay();
+      } else {
+        app.innerHTML = renderResult();
+      }
+    }
+
+    app.addEventListener("click", event => {
+      const target = event.target.closest("[data-action]");
+      if (!target) return;
+      const action = target.getAttribute("data-action");
+      if (action === "start") startRound();
+      if (action === "category") toggleCategory(state.roundItems[state.currentIndex], target.getAttribute("data-category"));
+      if (action === "level1") submitLevel1();
+      if (action === "level2") submitLevel2();
+      if (action === "restart") startRound();
+      if (action === "copy") copyScore();
+      if (action === "answers") {
+        state.answersVisible = !state.answersVisible;
+        state.message = "";
+        render();
+      }
+    });
+
+    app.addEventListener("change", event => {
+      const target = event.target.closest("[data-action='term']");
+      if (!target) return;
+      setTerm(state.roundItems[state.currentIndex], target.getAttribute("data-category"), target.value);
+    });
+
+    render();
+  </script>
+</body>
+</html>
